@@ -1,6 +1,10 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+import os
+
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import seed
@@ -43,3 +47,20 @@ async def mode_headers(request: Request, call_next):
 
 for module in (auth, users, products, orders, reviews, seller, admin, labs, legacy):
     app.include_router(module.router)
+
+
+static_root = os.path.abspath(settings.static_dir)
+if os.path.isdir(static_root):
+    for sub in ("assets", "img"):
+        folder = os.path.join(static_root, sub)
+        if os.path.isdir(folder):
+            app.mount(f"/{sub}", StaticFiles(directory=folder), name=sub)
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    def spa(full_path: str):
+        if full_path.startswith(("api/", "legacy/", "promo/")):
+            raise HTTPException(404, "Not found")
+        candidate = os.path.abspath(os.path.join(static_root, full_path))
+        if full_path and candidate.startswith(static_root + os.sep) and os.path.isfile(candidate):
+            return FileResponse(candidate)
+        return FileResponse(os.path.join(static_root, "index.html"))

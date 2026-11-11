@@ -24,6 +24,16 @@ class Settings(BaseSettings):
     ctf_timeout_seconds: float = 3.0
     cors_origins: str = "http://localhost:5173,http://localhost:8080"
 
+    static_dir: str = "./static"
+
+    @property
+    def sqlalchemy_url(self) -> str:
+        url = self.database_url
+        for prefix in ("postgres://", "postgresql://"):
+            if url.startswith(prefix):
+                return "postgresql+psycopg://" + url[len(prefix):]
+        return url
+
     @property
     def training_allowed(self) -> bool:
         return self.environment in ("local", "training", "development") and self.training_ack

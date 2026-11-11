@@ -5,3 +5,11 @@ Services: db (postgres:16, persistent volume `pgdata`), redis, backend (FastAPI,
 Env files: `.env.training` (vulnerable scenarios on), `.env.development` (secure default). Choose with `ENV_FILE=...`.
 Startup creates tables and seeds deterministic data automatically. RSA test keys are generated once into the `keys` volume.
 Status: compose file validated with `docker compose config`; images were not built in the authoring sandbox (no Docker daemon), so run the first build yourself and report problems.
+
+## Single-container hosts (Back4app Containers, Render, etc.)
+The root `Dockerfile` builds the frontend and serves it from the FastAPI container on `$PORT`.
+Set environment variables:
+- `DATABASE_URL` = external PostgreSQL URL (Neon, Supabase, ...); `postgres://` URLs are accepted.
+- `ENVIRONMENT=production` for a public host (forces secure mode; training mode refused). Use `training` only on a private, short-lived deployment.
+- Optional: `CTF_ENABLED`, `CTF_BASE_URL`, `CTF_API_TOKEN`.
+Root directory: `./`. The JWT test keys are regenerated on each deploy.
